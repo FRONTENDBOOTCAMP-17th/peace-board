@@ -1,0 +1,83 @@
+# register
+
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+
+    <title>Fetch POST 요청</title>
+  </head>
+  <body>
+    <h2>회원가입</h2>
+    <input
+      type="text"
+      id="username"
+      placeholder="아이디(4~20자, 영문/숫자)"
+    /><br />
+    <input
+      type="password"
+      id="password"
+      placeholder="비밀번호 (4~20자)"
+    /><br />
+    <input type="text" id="nickname" placeholder="닉네임 (2~20자)" />
+    <button id="submitBtn">생성</button>
+    <pre id="result"></pre>
+
+    <script>
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", async () => {
+          const result = document.getElementById("result");
+
+          const userData = {
+            username: document.getElementById("username").value,
+            password: document.getElementById("password").value,
+            nickname: document.getElementById("nickname").value,
+          };
+
+          const rules = {
+            username: /^[a-zA-Z0-9]{4,20}$/, // 최소 4자 최대 20자까지
+            password: /^\S{4,20}$/,
+            nickname: /^[a-zA-Z0-9ㄱ-ㅎㅏ-ㅣ가-힣]{2,20}$/,
+          };
+
+          if (!rules.username.test(userData.username)) {
+            alert("아이디는 4~20자의 영문/숫자여야 합니다.");
+            return;
+          }
+          if (!rules.password.test(userData.password)) {
+            alert("비밀번호는 4~20자여야 합니다.");
+            return;
+          }
+          if (!rules.nickname.test(userData.nickname)) {
+            alert("닉네임은 한글/영문/숫자 포함 2~20자여야 합니다.");
+            return;
+          }
+
+          try {
+            result.textContent = "전송 중...";
+
+            const res = await fetch(
+              "https://api.fullstackfamily.com/api/edu/ws-03a2de/auth/signup",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(userData),
+              },
+            );
+
+            if (!res.ok) {
+              throw new Error("HTTP 오류: " + res.status);
+            }
+
+            const data = await res.json();
+            result.textContent = "회원가입되었습니다.";
+            result.style.color = "green";
+          } catch (error) {
+            result.textContent = "에러: " + error.message;
+            result.style.color = "red";
+          }
+        });
+    </script>
+  </body>
+</html>
