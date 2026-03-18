@@ -1,0 +1,178 @@
+# 게시글 상세조회
+
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>게시글 상세보기</title>
+    <style>
+      body {
+        background-color: #f8f9fa;
+        font-family: "Pretendard", sans-serif;
+        margin: 0;
+        padding: 40px 20px;
+        color: #333;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: auto;
+        background: #fff;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e1e4e8;
+      }
+
+      .post-header {
+        margin-bottom: 20px;
+        border-bottom: 2px solid #333;
+        padding-bottom: 15px;
+      }
+
+      #viewTitle {
+        font-size: 28px;
+        margin: 0;
+        color: #1a1a1a;
+        word-break: break-all;
+      }
+
+      .post-info {
+        font-size: 14px;
+        color: #777;
+        margin-bottom: 30px;
+        display: flex;
+        gap: 15px;
+      }
+
+      #viewContent {
+        min-height: 300px;
+        font-size: 17px;
+        line-height: 1.8;
+        color: #444;
+        white-space: pre-wrap;
+        word-break: break-all;
+        padding: 10px 0;
+      }
+
+      .actions {
+        margin-top: 40px;
+        padding-top: 25px;
+        border-top: 1px solid #eee;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+
+      .btn {
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: 0.2s;
+        border: 1px solid #ddd;
+      }
+      .btn-list {
+        background: #fff;
+        color: #333;
+      }
+      .btn-edit {
+        background: #007bff;
+        color: #fff;
+        border-color: #007bff;
+      }
+      .btn-delete {
+        background: #fff;
+        color: #dc3545;
+        border-color: #dc3545;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="post-header">
+        <h2 id="viewTitle">제목을 불러오는 중...</h2>
+      </div>
+
+      <div class="post-info">
+        작성자: <span id="viewNickname">-</span> | 작성일:
+        <span id="viewDate">-</span>
+      </div>
+
+      <div id="viewContent">내용을 불러오는 중입니다...</div>
+
+      <div class="actions">
+        <a href="list.html" class="btn btn-list">목록으로</a>
+        <button id="editBtn" class="btn btn-edit">수정</button>
+        <button id="deleteBtn" class="btn btn-delete">삭제</button>
+      </div>
+    </div>
+
+    <script>
+      const token = localStorage.getItem("token");
+      const queryParams = new URLSearchParams(window.location.search);
+      const postId = queryParams.get("id");
+
+      const editBtn = document.getElementById("editBtn");
+      const deleteBtn = document.getElementById("deleteBtn");
+      const viewTitle = document.getElementById("viewTitle");
+      const viewNickname = document.getElementById("viewNickname");
+      const viewDate = document.getElementById("viewDate");
+      const viewContent = document.getElementById("viewContent");
+
+      editBtn.addEventListener("click", () => {
+        location.href = `edit.html?id=${postId}`;
+      });
+
+      const fetchDetail = async () => {
+        if (!postId) {
+          alert("글 번호가 없습니다.");
+          location.href = "list.html";
+          return;
+        }
+
+        try {
+          const res = await fetch(
+            `https://api.fullstackfamily.com/api/edu/ws-03a2de/posts/${postId}`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            },
+          );
+          if (res.status === 404) {
+            document.body.innerHTML = `
+               <div style="text-align:center; padding: 50px;">
+                 <h2>존재하지 않는 페이지입니다.</h2>
+                 <p>요청하신 게시글이 삭제되었거나 주소가 올바르지 않습니다.</p>
+                 <a href="list.html" style="color: blue; text-decoration: underline;">목록으로 돌아가기</a>
+               </div>
+             `;
+            return;
+          }
+
+          const result = await res.json();
+          console.log("받아온 데이터:", result);
+
+          if (res.ok) {
+            const post = result.data;
+            viewTitle.textContent = post.title;
+            viewContent.textContent = post.content;
+            viewNickname.textContent = post.author?.nickname || "익명";
+            viewDate.textContent = new Date(post.createdAt).toLocaleString();
+          } else {
+            alert("게시글을 불러오지 못했습니다.");
+          }
+        } catch (error) {
+          console.error("통신 에러:", error);
+        }
+      };
+
+      fetchDetail();
+    </script>
+  </body>
+</html>
