@@ -1,0 +1,187 @@
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>게시판</title>
+    <style>
+      body {
+        font-family:
+          "Pretendard",
+          -apple-system,
+          BlinkMacSystemFont,
+          system-ui,
+          Roboto,
+          sans-serif;
+        padding: 20px;
+        line-height: 1.6;
+      }
+      h2 {
+        margin-bottom: 30px;
+      }
+      #postForm div {
+        margin-bottom: 15px;
+      }
+      input[type="text"],
+      textarea {
+        width: 400px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-family: inherit;
+        box-sizing: border-box;
+      }
+      #title {
+        font-weight: 700;
+        font-size: 1.1rem;
+      }
+      #content {
+        height: 200px;
+        resize: vertical;
+      }
+      #submitBtn {
+        padding: 10px 20px;
+        background: #000;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      #submitBtn:hover {
+        background: #333;
+      }
+      #result {
+        margin-top: 20px;
+        background: #f4f4f4;
+        padding: 15px;
+        border-radius: 4px;
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>게시글 작성</h2>
+
+    <div
+      id="userInfo"
+      style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc"
+    >
+      사용자 정보를 불러오는 중...
+    </div>
+
+    <div id="postForm" style="display: none">
+      <div>
+        <label>작성자: </label>
+        <span id="authorName"></span>
+      </div>
+      <div style="margin-top: 10px">
+        <input
+          type="text"
+          id="title"
+          placeholder="제목을 입력하세요"
+          style="width: 300px"
+        />
+      </div>
+      <div style="margin-top: 10px">
+        <textarea
+          id="content"
+          placeholder="내용을 입력하세요"
+          style="width: 300px; height: 100px"
+        ></textarea>
+      </div>
+      <button id="submitBtn" style="margin-top: 10px">게시하기</button>
+    </div>
+
+    <pre id="result"></pre>
+
+    <script>
+      const BASE_URL = "https://api.fullstackfamily.com/api/edu/ws-03a2de";
+      const result = document.getElementById("result");
+      const token = localStorage.getItem("token");
+
+      // 페이지 로드 시 로그인 체크 및 사용자 정보 가져오기
+      async function init() {
+        if (!token) {
+          alert("로그인이 필요합니다! 로그인 페이지로 이동하세요.");
+          document.getElementById("userInfo").textContent =
+            "로그인 정보가 없습니다.";
+          return;
+        }
+
+        try {
+          // GET 방식으로 내 정보 가져오기
+          const res = await fetch(`${BASE_URL}/auth/me`, {
+            method: "GET",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          if (!res.ok)
+            throw new Error("사용자 정보를 가져오는데 실패했습니다.");
+
+          const userData = await res.json();
+          const nickname = userData.data.nickname;
+
+          document.getElementById("authorName").textContent = nickname;
+          document.getElementById("userInfo").style.display = "none";
+          document.getElementById("postForm").style.display = "block";
+        } catch (error) {
+          alert("인증이 만료되었습니다. 다시 로그인해주세요.");
+          console.error(error);
+        }
+      }
+
+      // 게시하기 버튼 클릭 시
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", async () => {
+          const title = document.getElementById("title").value;
+          const content = document.getElementById("content").value;
+
+          if (!title || !content) {
+            alert("제목과 내용을 입력해주세요.");
+            return;
+          }
+
+          try {
+            result.textContent = "처리 중...";
+            // 1단계: Draft 생성 (POST 요청)
+            const draftRes = await fetch(`${BASE_URL}/posts`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ title, content }),
+            });
+
+            const draftData = await draftRes.json();
+            const postId = draftData.data ? draftData.data.id : draftData.id;
+
+            result.textContent += `\n성공! 생성된 ID: ${postId}\n2단계: 발행 중(Publish)...`;
+
+            // 2단계: Publish (PUT 요청)
+            const publishRes = await fetch(
+              `${BASE_URL}/posts/${postId}/publish`,
+              {
+                method: "PUT",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ title, content }),
+              },
+            );
+
+            const finalData = await publishRes.json();
+
+            result.textContent =
+              "최종 발행 성공!🎉\n\n" + JSON.stringify(finalData, null, 2);
+            result.style.color = "green";
+          } catch (error) {
+            result.textContent = "에러 발생: " + error.message;
+            result.style.color = "red";
+          }
+        });
+
+      init();
+    </script>
+  </body>
+</html>
