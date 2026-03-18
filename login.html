@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Fetch POST 요청</title>
+  </head>
+  <body>
+    <h2>로그인</h2>
+    <input type="text" id="username" placeholder="유저네임" />
+    <input type="password" id="password" placeholder="비밀번호" />
+    <button id="submitBtn">로그인하기</button>
+    <pre id="result"></pre>
+
+    <script>
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", async () => {
+          const result = document.getElementById("result");
+
+          const loginData = {
+            username: document.getElementById("username").value,
+            password: document.getElementById("password").value,
+          };
+
+          fetch(
+            "https://api.fullstackfamily.com/api/edu/ws-03a2de/auth/login",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(loginData),
+            },
+          )
+            .then((res) => {
+              if (!res.ok) throw new Error("HTTP 오류: " + res.status);
+              return res.json();
+            })
+            .then((data) => {
+              localStorage.setItem("token", data.data.token);
+              result.textContent = "로그인 성공\n토큰: " + data.data.token;
+              result.style.color = "green";
+            })
+            .catch((error) => {
+              result.textContent = "에러: " + error.message;
+              result.style.color = "red";
+            });
+        });
+    </script>
+  </body>
+</html>
