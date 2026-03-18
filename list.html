@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>게시판 목록</title>
+    <style>
+      body {
+        padding: 20px;
+      }
+      .container {
+        max-width: 800px;
+        margin: auto;
+      }
+      .post-item {
+        border: 1px solid #e1e4e8;
+        padding: 20px;
+        margin-bottom: 12px;
+        border-radius: 10px;
+        background-color: #fff;
+        transition: all 0.2s ease-in-out;
+      }
+      .post-title {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+      }
+      .post-meta {
+        font-size: 13px;
+        color: #000;
+      }
+      .header-flex {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .btn-write {
+        padding: 10px 20px;
+        background: #000;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header-flex">
+        <h2>게시판 목록</h2>
+        <a href="board.html" class="btn-write">글쓰기</a>
+      </div>
+
+      <div id="message"></div>
+      <div id="postList">
+        <p>글을 불러오는 중입니다...</p>
+      </div>
+    </div>
+
+    <script>
+      const postList = document.getElementById("postList");
+      const message = document.getElementById("message");
+
+      const fetchPosts = async () => {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          location.href = "login.html";
+          return;
+        }
+
+        try {
+          const res = await fetch(
+            "https://api.fullstackfamily.com/api/edu/ws-03a2de/posts",
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            },
+          );
+
+          const result = await res.json();
+          console.log("데이터 확인:", result);
+
+          if (res.ok) {
+            const posts = result.data.content;
+
+            if (!posts || posts.length === 0) {
+              postList.innerHTML = "<p>등록된 게시글이 없습니다.</p>";
+              return;
+            }
+
+            postList.innerHTML = "";
+            posts.forEach((post) => {
+              const item = document.createElement("div");
+              item.className = "post-item";
+
+              item.innerHTML = `
+            <div class="post-title">${post.title}</div>
+            <div class="post-meta">
+              작성자: ${post.authorNickname || "익명"} | 
+              작성일: ${new Date(post.createdAt).toLocaleString()}
+            </div>
+          `;
+              item.addEventListener("click", () => {
+                location.href = `detail.html?id=${post.id}`;
+              });
+              postList.appendChild(item);
+            });
+          } else {
+            if (res.status === 401) {
+              localStorage.removeItem("token");
+              location.href = "login.html";
+            }
+            throw new Error(result.message || "목록 로드 실패");
+          }
+        } catch (error) {
+          message.textContent = "에러: " + error.message;
+          postList.innerHTML = "";
+        }
+      };
+
+      document.addEventListener("DOMContentLoaded", fetchPosts);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>게시글 수정</title>
+    <style>
+      body {
+        background-color: #f8f9fa;
+        font-family: "Pretendard", sans-serif;
+        margin: 0;
+        padding: 40px 20px;
+        color: #333;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: auto;
+        background: #fff;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e1e4e8;
+      }
+
+      h2 {
+        margin-top: 0;
+        font-size: 24px;
+        border-bottom: 2px solid #333;
+        padding-bottom: 15px;
+        margin-bottom: 30px;
+      }
+
+      /* 입력 영역 스타일 */
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #555;
+      }
+
+      input[type="text"],
+      textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 16px;
+        box-sizing: border-box; /* 패딩이 너비에 포함되도록 */
+        outline: none;
+        transition: border-color 0.2s;
+      }
+
+      input[type="text"]:focus,
+      textarea:focus {
+        border-color: #007bff;
+      }
+
+      textarea {
+        resize: vertical; /* 세로로만 조절 가능 */
+        min-height: 300px;
+      }
+
+      /* 버튼 영역 */
+      .actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 30px;
+      }
+
+      .btn {
+        padding: 12px 25px;
+        border-radius: 6px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        border: 1px solid #ddd;
+        transition: 0.2s;
+      }
+
+      .btn-cancel {
+        background: #fff;
+        color: #666;
+        text-decoration: none;
+        display: inline-block;
+        line-height: 1.5; /* 텍스트 중앙 정렬용 */
+      }
+
+      .btn-submit {
+        background: #000;
+        color: #fff;
+        border: none;
+      }
+
+      .btn-submit:hover {
+        background: #333;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>게시글 수정</h2>
+
+      <form id="editForm">
+        <div class="form-group">
+          <label for="title">제목</label>
+          <input
+            type="text"
+            id="title"
+            placeholder="제목을 입력하세요"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="content">내용</label>
+          <textarea
+            id="content"
+            placeholder="내용을 입력하세요"
+            required
+          ></textarea>
+        </div>
+
+        <div class="actions">
+          <a href="#" id="cancelBtn" class="btn btn-cancel">취소</a>
+          <button type="submit" class="btn btn-submit">수정 완료</button>
+        </div>
+      </form>
+    </div>
+
+    <script>
+      const token = localStorage.getItem("token");
+      const queryParams = new URLSearchParams(window.location.search);
+      const postId = queryParams.get("id");
+
+      const editForm = document.getElementById("editForm");
+      const titleInput = document.getElementById("title");
+      const contentInput = document.getElementById("content");
+      const cancelBtn = document.getElementById("cancelBtn");
+
+      cancelBtn.addEventListener("click", () => {
+        location.href = `detail.html?id=${postId}`;
+      });
+
+      document
+        .getElementById("editForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const title = document.getElementById("title").value;
+          const content = document.getElementById("content").value;
+
+          const editRes = await fetch(
+            `https://api.fullstackfamily.com/api/edu/ws-03a2de/posts/${postId}`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ title, content }),
+            },
+          );
+          if (editRes.ok) {
+            alert("수정되었습니다!");
+            location.href = `detail.html?id=${postId}`;
+          } else {
+            alert("수정 실패: 권한이 없거나 오류가 발생했습니다.");
+          }
+        });
+      const fetchPostData = async () => {
+        try {
+          const res = await fetch(
+            `https://api.fullstackfamily.com/api/edu/ws-03a2de/posts/${postId}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            },
+          );
+          const result = await res.json();
+
+          if (res.ok) {
+            titleInput.value = result.data.title;
+            contentInput.value = result.data.content;
+          } else {
+            alert("데이터를 불러오지 못했습니다.");
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      };
+
+      fetchPostData();
+    </script>
+  </body>
+</html>
